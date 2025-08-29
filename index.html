@@ -2,7 +2,7 @@
 <!--
   Premium static portfolio — semantic, accessible, responsive.
   Decisions: fluid type via clamp(), CSS variables for theming, reduced-motion support,
-  sticky/glass navbar, scroll-reveal via IntersectionObserver, Formspree with ARIA live status.
+  sticky/glass navbar, scroll-reveal via IntersectionObserver, Google Form embed for Contact.
   Extend: add more project <article> cards; update social links and resume path as needed.
 -->
 <html lang="en" class="no-js">
@@ -242,54 +242,34 @@
       </div>
     </section>
 
-    <!-- Contact -->
+    <!-- Contact (Google Form Embed) -->
     <section id="contact" class="section alt" aria-label="Contact">
       <div class="container">
         <header class="section-header reveal-up">
           <h2>Contact</h2>
-          <p>Let’s connect—email or LinkedIn works best.</p>
+          <p>Please fill out the form below and I’ll get back to you soon.</p>
         </header>
 
-        <div class="grid-2">
-          <div class="card reveal-up">
-            <h3>Links</h3>
-            <ul class="contact-list" role="list">
-              <li><a href="mailto:akashreddybg@gmail.com">akashreddybg@gmail.com</a></li>
-              <li><a href="tel:+918754331423">+91 87543 31423</a></li>
-              <li><a href="https://www.linkedin.com/in/akash-reddy-bg" target="_blank" rel="noopener">linkedin.com/in/akash-reddy-bg</a></li>
-              <li><a href="assets/akash-reddy-bg-resume.pdf" target="_blank" rel="noopener">View Resume (PDF)</a></li>
-            </ul>
-          </div>
+        <div class="contact-embed card reveal-up" role="region" aria-label="Google contact form">
+          <!-- 🔁 Replace ONLY the src value with your Google Form embed URL -->
+          <iframe
+            class="gform-iframe"
+            title="Contact form"
+            src="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform?embedded=true"
+            frameborder="0"
+            marginheight="0"
+            marginwidth="0"
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade"
+            allowfullscreen>
+            Loading…
+          </iframe>
 
-          <!-- Replace action with your Formspree form ID -->
-          <form class="card reveal-up delay-1" id="contactForm" action="https://formspree.io/f/yourFormId" method="POST" novalidate>
-            <h3>Send a Message</h3>
-
-            <div class="field">
-              <label for="name">Name</label>
-              <input id="name" name="name" type="text" autocomplete="name" required aria-required="true" aria-describedby="err-name" />
-              <small id="err-name" class="error" data-for="name"></small>
-            </div>
-
-            <div class="field">
-              <label for="email">Email</label>
-              <input id="email" name="_replyto" type="email" autocomplete="email" required aria-required="true" aria-describedby="err-email" />
-              <small id="err-email" class="error" data-for="email"></small>
-            </div>
-
-            <div class="field">
-              <label for="message">Message</label>
-              <textarea id="message" name="message" rows="5" required aria-required="true" aria-describedby="err-message"></textarea>
-              <small id="err-message" class="error" data-for="message"></small>
-            </div>
-
-            <input type="hidden" name="_subject" value="New message from portfolio" />
-            <div class="form-actions">
-              <button class="btn primary" type="submit">Send</button>
-              <span id="formStatus" class="sr-status" role="status" aria-live="polite"></span>
-            </div>
-            <p class="hint">Using <a href="https://formspree.io/" target="_blank" rel="noopener">Formspree</a>. Replace the action URL with your form ID.</p>
-          </form>
+          <!-- Optional: fallback link if iframe is blocked -->
+          <p class="gform-fallback">
+            Can’t see the form?
+            <a href="https://docs.google.com/forms/d/e/YOUR_FORM_ID/viewform" target="_blank" rel="noopener">Open it in a new tab</a>.
+          </p>
         </div>
       </div>
     </section>
