@@ -1,8 +1,16 @@
-/* Theme toggle */
+/* ==========================================================================
+   Portfolio interactions
+   - Theme persistence, mobile nav, active link highlight
+   - Scroll reveal (IntersectionObserver) with reduced-motion support
+   - Form validation + fetch to Formspree with ARIA live status
+   ========================================================================== */
+
+/* 1) Theme: dark/light with persistence */
 const root = document.documentElement;
 const themeToggle = document.getElementById('themeToggle');
 const savedTheme = localStorage.getItem('theme');
 const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+
 if (savedTheme === 'light' || (!savedTheme && prefersLight)) {
   root.classList.add('light');
 }
@@ -11,94 +19,112 @@ themeToggle?.addEventListener('click', () => {
   localStorage.setItem('theme', root.classList.contains('light') ? 'light' : 'dark');
 });
 
-/* Mobile nav */
+/* 2) Mobile nav toggle */
 const navToggle = document.getElementById('navToggle');
 const siteNav = document.getElementById('siteNav');
 navToggle?.addEventListener('click', () => {
-  const isOpen = siteNav.classList.toggle('open');
-  navToggle.setAttribute('aria-expanded', String(isOpen));
+  const open = siteNav.classList.toggle('open');
+  navToggle.setAttribute('aria-expanded', String(open));
+  navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
 });
 siteNav?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
   siteNav.classList.remove('open');
   navToggle.setAttribute('aria-expanded', 'false');
+  navToggle.setAttribute('aria-label', 'Open menu');
 }));
 
-/* Active link highlight */
+/* 3) Active section highlighting on scroll */
 const sections = [...document.querySelectorAll('main section[id]')];
-const navLinks = [...document.querySelectorAll('.site-nav a')];
-const byId = id => navLinks.find(a => a.getAttribute('href') === `#${id}`);
-const onScroll = () => {
+const navLinks = [...document.querySelectorAll('.site-nav a.nav-link')];
+const linkFor = id => navLinks.find(a => a.getAttribute('href') === `#${id}`);
+
+function setActiveOnScroll() {
   const offset = window.scrollY + 120;
   for (const sec of sections) {
     const top = sec.offsetTop;
     const bottom = top + sec.offsetHeight;
-    const link = byId(sec.id);
+    const link = linkFor(sec.id);
     if (!link) continue;
     if (offset >= top && offset < bottom) link.classList.add('active');
     else link.classList.remove('active');
   }
-};
-document.addEventListener('scroll', onScroll, { passive: true });
-window.addEventListener('load', onScroll);
+}
+document.addEventListener('scroll', setActiveOnScroll, { passive: true });
+window.addEventListener('load', setActiveOnScroll);
 
-/* Reveal animations */
-const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-fade');
-const io = new IntersectionObserver((entries) => {
-  entries.forEach(e => {
-    if (e.isIntersecting) {
-      e.target.classList.add('reveal-visible');
-      io.unobserve(e.target);
-    }
-  });
-}, { threshold: 0.15 });
-revealEls.forEach(el => io.observe(el));
+/* 4) Scroll reveal (respect reduced motion) */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (!reduceMotion) {
+  const revealEls = document.querySelectorAll('.reveal-up, .reveal-left, .reveal-fade');
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('reveal-visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
+  revealEls.forEach(el => io.observe(el));
+} else {
+  document.querySelectorAll('.reveal-up, .reveal-left, .reveal-fade').forEach(el => el.classList.add('reveal-visible'));
+}
 
-/* Contact form validation + AJAX (Formspree) */
+/* 5) Contact form validation + AJAX (Formspree) */
 const form = document.getElementById('contactForm');
 const statusEl = document.getElementById('formStatus');
 
-function showError(id, msg) {
-  const small = form?.querySelector(`small[data-for="${id}"]`);
-  if (small) small.textContent = msg || '';
+function setError(name, msg = '') {
+  const field = form?.querySelector(`[name="${name}"]`);
+  const small = form?.querySelector(`small[data-for="${name}"]`);
+  if (!field || !small) return;
+  small.textContent = msg;
+  field.setAttribute('aria-invalid', msg ? 'true' : 'false');
 }
-function validate() {
-  let ok = true;
+
+function validateForm() {
   if (!form) return false;
+  let ok = true;
+
   const name = form.name.value.trim();
   const email = form['_replyto'].value.trim();
   const message = form.message.value.trim();
-  showError('name'); showError('email'); showError('message');
-  if (!name) { showError('name', 'Please enter your name.'); ok = false; }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showError('email', 'Please enter a valid email.'); ok = false; }
-  if (message.length < 10) { showError('message', 'Please write a slightly longer message.'); ok = false; }
+
+  setError('name'); setError('email'); setError('message');
+
+  if (!name) { setError('name', 'Please enter your name.'); ok = false; }
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('email', 'Please enter a valid email.'); ok = false; }
+  if (message.length < 10) { setError('message', 'Please write a slightly longer message.'); ok = false; }
+
   return ok;
 }
 
 form?.addEventListener('submit', async (e) => {
-  if (!validate()) { e.preventDefault(); return; }
+  if (!validateForm()) { e.preventDefault(); return; }
   e.preventDefault();
+
   statusEl.textContent = 'Sending...';
-  const data = new FormData(form);
+
   try {
     const resp = await fetch(form.getAttribute('action'), {
       method: 'POST',
       headers: { 'Accept': 'application/json' },
-      body: data
+      body: new FormData(form)
     });
+
     if (resp.ok) {
       form.reset();
       statusEl.textContent = 'Thanks! Your message has been sent.';
-      statusEl.style.color = 'var(--success)';
+      statusEl.style.color = 'var(--accent-2)';
     } else {
       const j = await resp.json().catch(() => ({}));
       statusEl.textContent = j.errors?.map(e => e.message).join(', ') || 'Something went wrong. Please try again.';
-      statusEl.style.color = 'var(--danger)';
+      statusEl.style.color = '#ef4444';
     }
   } catch {
     statusEl.textContent = 'Network error. Please try again.';
-    statusEl.style.color = 'var(--danger)';
+    statusEl.style.color = '#ef4444';
   }
 });
 
-/* Footer year */
+/* 6) Footer year */
 document.getElementById('year').textContent = new Date().getFullYear();
